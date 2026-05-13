@@ -108,7 +108,7 @@ def get_release_date(album_name: str) -> str:
         release date of the given album
     """
     infobox_text = clean_text(get_first_infobox_text(get_page_html(album_name)))
-    pattern = r"(?:Polar radius|Mean radius)(?:[^\d]*)(?P<radius>[\d,.]+)(?:.*?)km"
+    pattern = r"pattern = r"Released\s*(?:\([^)]+\)\s*)?(?P<date>[A-Za-z0-9 ,]+)"
     error_text = "Page infobox has no polar radius information"
     match = get_match(infobox_text, pattern, error_text)
 
@@ -116,16 +116,16 @@ def get_release_date(album_name: str) -> str:
 
 
 def get_who_produced(name: str) -> str:
-    """Gets birth date of the given person
+    """Gets the producer of the given album
 
     Args:
-        name - name of the album
+        album_name - name of the album
 
     Returns:
         producer of the given album
     """
     infobox_text = clean_text(get_first_infobox_text(get_page_html(name)))
-    pattern = r"(?:released\D*)(?P<birth>\d{4}-\d{2}-\d{2})"
+    pattern = r"Producer\s*(?P<who_produced>[A-Za-z0-9 ,.&;'-]+)"
     error_text = (
         "Page infobox has no birth information (at least none in xxxx-xx-xx format)"
     )
@@ -152,13 +152,13 @@ def birth_date(matches: List[str]) -> List[str]:
 
 
 def what_genre(matches: List[str]) -> List[str]:
-    """Returns polar radius of planet in matches
+    """Returns genre of the album in matches
 
     Args:
-        matches - match from pattern of planet to find polar radius of
+        matches - match from pattern of album to find genre of
 
     Returns:
-        polar radius of planet
+        genre of album
     """
     return [get_what_genre(matches[0])]
 
