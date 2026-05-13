@@ -7,6 +7,17 @@ from typing import List, Callable, Tuple, Any, Match
 
 
 def get_page_html(title: str) -> str:
+    search_response = requests.get(
+        "https://en.wikipedia.org/w/api.php",
+        params={"action": "query", "list": "search", "srsearch": title, "format": "json"},
+        headers={"User-Agent": "intro-ai-class/1.0"},
+        timeout=10
+    )
+    results = search_response.json().get("query", {}).get("search", [])
+    if results:
+        title = results[0]["title"]  # use the top search result title
+        print(f"Searching Wikipedia for: {title}")
+
     for attempt in range(5):
         response = requests.get(
             "https://en.wikipedia.org/w/api.php",
@@ -87,40 +98,40 @@ def get_match(
     return match
 
 
-def get_polar_radius(planet_name: str) -> str:
-    """Gets the radius of the given planet
+def get_release_date(album_name: str) -> str:
+    """Gets the release date of the given album
 
     Args:
-        planet_name - name of the planet to get radius of
+        album_name - name of the album to get release date of
 
     Returns:
-        radius of the given planet
+        release date of the given album
     """
-    infobox_text = clean_text(get_first_infobox_text(get_page_html(planet_name)))
+    infobox_text = clean_text(get_first_infobox_text(get_page_html(album_name)))
     pattern = r"(?:Polar radius|Mean radius)(?:[^\d]*)(?P<radius>[\d,.]+)(?:.*?)km"
     error_text = "Page infobox has no polar radius information"
     match = get_match(infobox_text, pattern, error_text)
 
-    return match.group("radius")
+    return match.group("release_date")
 
 
-def get_birth_date(name: str) -> str:
+def get_who_produced(name: str) -> str:
     """Gets birth date of the given person
 
     Args:
-        name - name of the person
+        name - name of the album
 
     Returns:
-        birth date of the given person
+        producer of the given album
     """
     infobox_text = clean_text(get_first_infobox_text(get_page_html(name)))
-    pattern = r"(?:Born\D*)(?P<birth>\d{4}-\d{2}-\d{2})"
+    pattern = r"(?:released\D*)(?P<birth>\d{4}-\d{2}-\d{2})"
     error_text = (
         "Page infobox has no birth information (at least none in xxxx-xx-xx format)"
     )
     match = get_match(infobox_text, pattern, error_text)
 
-    return match.group("birth")
+    return match.group("who_produced")
 
 
 # below are a set of actions. Each takes a list argument and returns a list of answers
@@ -137,10 +148,10 @@ def birth_date(matches: List[str]) -> List[str]:
     Returns:
         birth date of named person
     """
-    return [get_birth_date(" ".join(matches))]
+    return [get_who_produced(" ".join(matches))]
 
 
-def polar_radius(matches: List[str]) -> List[str]:
+def what_genre(matches: List[str]) -> List[str]:
     """Returns polar radius of planet in matches
 
     Args:
@@ -149,7 +160,7 @@ def polar_radius(matches: List[str]) -> List[str]:
     Returns:
         polar radius of planet
     """
-    return [get_polar_radius(matches[0])]
+    return [get_what_genre(matches[0])]
 
 
 # dummy argument is ignored and doesn't matter
@@ -165,8 +176,9 @@ Action = Callable[[List[str]], List[Any]]
 # The pattern-action list for the natural language query system. It must be declared
 # here, after all of the function definitions
 pa_list: List[Tuple[Pattern, Action]] = [
-    ("when was % born".split(), birth_date),
-    ("what is the polar radius of %".split(), polar_radius),
+    ("when was % released".split(), release_date),
+    ("who produced % ".split(), who_produced),
+    ("what is the genre of %".split(), what_genre),
     (["bye"], bye_action),
 ]
 
@@ -195,7 +207,7 @@ def search_pa_list(src: List[str]) -> List[str]:
 def query_loop() -> None:
     """The simple query loop. The try/except structure is to catch Ctrl-C or Ctrl-D
     characters and exit gracefully"""
-    print("Welcome to the wikipedia chatbot!\n")
+    print("Welcome to the wikipedia chatbot albums edition!\n")
     while True:
         try:
             print()
